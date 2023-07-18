@@ -12,8 +12,8 @@ create table objects(
 
 create table time(
   id integer primary key autoincrement,
-  day date,
-  hours integer,
+  day text, 
+  hours numeric,
   object integer,
   user integer
 );
