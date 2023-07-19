@@ -3,6 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from aiogram import Bot, Dispatcher, Router, types
 from aiogram import F
+import aiogram.utils.markdown as md
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -13,6 +14,17 @@ from handlers import tools
 
 rt = Router()
 
+async def result_answer(message: types.Message, work_duration: Decimal, date = None):
+    if not date:
+        date = datetime.today().date()
+    actual_object = db.get_actual_object(message.from_user.id)
+    msg = md.text(
+        md.text(md.hbold(actual_object)),
+        md.text(date),
+        md.text("продолжительность работы - ", work_duration, "часов"),
+        sep="\n",
+    )
+    await message.answer(msg, parse_mode="HTML")
 
 @rt.message(
     F.text.regexp(
@@ -40,31 +52,20 @@ async def date_record(message: types.Message, work_date: re.Match[str]):
     else:
         await message.answer("Неверный ввод")
         return
-    actual_object = db.get_actual_object(message.from_user.id)
     db.set_work_date(message.from_user.id, date, work_duration)
-    await message.answer(
-        f"{actual_object}\n{date}\nпродолжительность работы - {work_duration} часов"
-    )
-
+    await result_answer(message, work_duration, date)
 
 @rt.message(F.text.regexp(r"^\d{1,2}[.,]\d$"))
 async def decimal_record(message: types.Message):
-    print("Число с точкой")
     work_duration = Decimal(message.text.replace(",", "."))
 
-    actual_object = db.get_actual_object(message.from_user.id)
     db.set_work_date(message.from_user.id, datetime.today().date(), work_duration)
-    await message.answer(
-        f"{actual_object}\n{datetime.today().date()}\nпродолжительность работы - {work_duration} часов"
-    )
+    await result_answer(message, work_duration)
 
 
 @rt.message(F.text.regexp(r"^\d{1,2}$"))
 async def number_record(message: types.Message):
     print("Число")
     work_duration = Decimal(message.text.replace(",", "."))
-    actual_object = db.get_actual_object(message.from_user.id)
     db.set_work_date(message.from_user.id, datetime.today().date(), work_duration)
-    await message.answer(
-        f"{actual_object}\n{datetime.today().date()}\nпродолжительность работы - {work_duration} часов"
-    )
+    await result_answer(message, work_duration)

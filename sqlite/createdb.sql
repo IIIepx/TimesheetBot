@@ -15,18 +15,16 @@ create table time(
   day text, 
   hours numeric,
   object integer,
-  user integer
+  user integer,
+  FOREIGN KEY(user) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY(object) REFERENCES objects(id) ON DELETE CASCADE 
 );
 
 create table actual_object(
+  id integer primary key autoincrement,
   object integer,
-  user integer primary key
+  user integer,
+  FOREIGN KEY(user) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY(object) REFERENCES objects(id) ON DELETE CASCADE 
 );
 
-insert into objects (id, name)
-values 
-  (1, "Новосмоленская набережная 2 кв. 145");
-  
-insert into users (id, fname, lname, user_type)
-values
-  (441293054, "Максим", "Машков", "root");

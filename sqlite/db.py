@@ -141,6 +141,10 @@ def _init_db():
     with open("sqlite/createdb.sql", "r") as f:
         sql = f.read()
     cursor.executescript(sql)
+    
+    with open("sqlite/initialdata.sql", "r") as f:
+        sql = f.read()
+    cursor.executescript(sql)
     conn.commit()
 
 
