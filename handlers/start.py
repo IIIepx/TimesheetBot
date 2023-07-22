@@ -7,7 +7,7 @@ from sqlite import db
 from keyboards import keyboards
 from handlers import tools
 
-router = Router()
+rt = Router()
 actual_projects = tools.get_list_of_projects()
 
 class UserState(StatesGroup):
@@ -16,7 +16,7 @@ class UserState(StatesGroup):
     query_answer_waiting = State()
 
 
-@router.message(Command("start"))
+@rt.message(Command("start"))
 async def cmd_start(
         message: types.Message, bot: Bot, dp: Dispatcher, state: FSMContext, root_id: int):
     users = db.get_users_id_list()
@@ -43,7 +43,7 @@ async def cmd_start(
         await state_query.update_data({"msg": message})
 
 
-@router.message(UserState.query_answer_waiting, F.text == "Отклонить")
+@rt.message(UserState.query_answer_waiting, F.text == "Отклонить")
 async def claim_reject(message: types.Message, state: FSMContext):
     msg = (await state.get_data())["msg"]
     await message.answer(
@@ -54,7 +54,7 @@ async def claim_reject(message: types.Message, state: FSMContext):
     await msg.answer("К сожалению ваша заявка отклонена")
     await state.clear()
 
-@router.message(Command("проект"))
+@rt.message(Command("проект"))
 async def change_project(message: types.Message, state: FSMContext):
     actual_object = db.get_actual_object(message.from_user.id)
     if actual_object:
@@ -62,7 +62,7 @@ async def change_project(message: types.Message, state: FSMContext):
     await message.answer("Выберите актуальный проект.", reply_markup=keyboards.make_keyboard(actual_projects))
     await state.set_state(UserState.project_choice)
 
-@router.message(Command("новый"))
+@rt.message(Command("новый"))
 async def add_project(message: types.Message):
     user_type = db.get_user_type(message.from_user.id) 
     print(user_type)
@@ -74,11 +74,12 @@ async def add_project(message: types.Message):
     result_insert = db.insert_object(project_name)
     if result_insert:
         await message.answer("Новый проект успешно добавлен.")
-        actual_projects = tools.get_list_of_projects()
+        global actual_projects
+        actual_project = tools.get_list_of_projects()
     else:
         await message.answer("Неудача. Такой проект уже существует.")
 
-@router.message(UserState.query_answer_waiting, F.text.startswith("Принять"))
+@rt.message(UserState.query_answer_waiting, F.text.startswith("Принять"))
 async def claim_accept(
     message: types.Message, bot: Bot, dp: Dispatcher, state: FSMContext
 ):
@@ -105,7 +106,7 @@ async def claim_accept(
     await state_query.set_state(UserState.project_choice)
 
 
-@router.message(UserState.project_choice, F.text.in_(actual_projects))
+@rt.message(UserState.project_choice, F.text.in_(actual_projects))
 async def project_accept(message: types.Message, state: FSMContext):
 
     db.set_actual_object(db.get_object_id(message.text), message.from_user.id)
@@ -115,11 +116,11 @@ async def project_accept(message: types.Message, state: FSMContext):
     await state.clear()
 
 
-@router.message(UserState.query_answer_waiting, F.text)
+@rt.message(UserState.query_answer_waiting, F.text)
 async def wrong_input(message: types.Message):
     await message.answer("Неверный ввод. Заявка пользователя ждет обработки.")
 
 
-@router.message(UserState.project_choice, F.text)
+@rt.message(UserState.project_choice, F.text)
 async def wrong_choice(message: types.Message):
     await message.answer("Неверный ввод. Пожалуйста выберите проект из списка.")
