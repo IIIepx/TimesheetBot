@@ -19,6 +19,9 @@ async def cmd_result(message: types.Message):
     cmd_list = message.text.split()
     if len(cmd_list) == 1:
         result = db.get_user_detail_result(message.from_user.id)
+        if not result:
+            await message.answer("Нет данных для формирования отчета")
+            return
         output = tools.data_to_html(
             result,
             columns=["Дата", "Кол-во часов"],
@@ -29,6 +32,10 @@ async def cmd_result(message: types.Message):
         user_type = db.get_user_type(message.from_user.id)
         if user_type == "user":
             result = db.get_user_result(message.from_user.id)
+            if not result:
+                await message.answer("Нет данных для формирования отчета")
+                return
+
             output = tools.data_to_html(
                 result, columns=["Наименование проекта", "Кол-во часов"]
             )

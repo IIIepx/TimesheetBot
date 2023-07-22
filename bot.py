@@ -17,8 +17,8 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
 )
-logger.error("Starting bot")
 
+root_id = int(os.environ["ROOT_USER"])
 
 bot = Bot(token=os.environ["BOT_API"])
 dp = Dispatcher(storage=MemoryStorage())
@@ -37,8 +37,15 @@ async def cmd_down(message: types.Message):
     sys.exit()
 
 
+@dp.message(Command("help"))
+async def cmd_help(message: types.Message):
+    f = open("help.txt", "r")
+    str = f.read()
+    await message.answer(str, parse_mode="HTML")
+
+
 async def main():
-    await dp.start_polling(bot, dp=dp)
+    await dp.start_polling(bot, dp=dp, root_id=root_id)
 
 
 if __name__ == "__main__":

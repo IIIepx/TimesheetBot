@@ -18,8 +18,7 @@ class UserState(StatesGroup):
 
 @router.message(Command("start"))
 async def cmd_start(
-    message: types.Message, bot: Bot, dp: Dispatcher, state: FSMContext
-):
+        message: types.Message, bot: Bot, dp: Dispatcher, state: FSMContext, root_id: int):
     users = db.get_users_id_list()
     user = [item for item in users if item[0] == message.from_user.id]
     if not user:
@@ -29,7 +28,7 @@ async def cmd_start(
         )
 
         await bot.send_message(
-            441293054,
+            root_id,
             text=f"{message.from_user.first_name} {message.from_user.last_name} подал заявку на подключение",
             reply_markup=keyboards.make_keyboard([
                 "Отклонить",
@@ -38,7 +37,7 @@ async def cmd_start(
             ]),
         )
         state_query = dp.fsm.resolve_context(
-            bot=bot, chat_id=441293054, user_id=441293054
+            bot=bot, chat_id=root_id, user_id=root_id
         )
         await state_query.set_state(UserState.query_answer_waiting)
         await state_query.update_data({"msg": message})
