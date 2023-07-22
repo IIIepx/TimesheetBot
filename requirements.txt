@@ -1,2 +1,4 @@
 aiogram==3.0.0b7
-python-dotenv
+python-dotenv==1.0.0
+pandas==2.03
+numpy==1.25.1
