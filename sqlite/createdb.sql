@@ -1,7 +1,6 @@
 create table users(
   id integer primary key,
-  fname varchar(255) not null,
-  lname varchar(255),
+  name varchar(255) not null,
   user_type character(20)
 );
 
@@ -28,3 +27,14 @@ create table actual_object(
   FOREIGN KEY(object) REFERENCES objects(id) ON DELETE CASCADE 
 );
 
+CREATE VIEW summary 
+AS           
+SELECT users.id AS id,                        
+users.name AS name,    
+objects.name AS object,                       
+time.day AS day,                              
+time.hours AS hours                           
+FROM time                                     
+INNER JOIN users ON time.user = users.id      
+INNER JOIN objects ON time.object = objects.id
+;

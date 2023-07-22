@@ -33,22 +33,6 @@ def insert(table: str, columns: Tuple, values: List[Tuple]):
     conn.commit()
 
 
-def insert_user(id: int, first_name: str, last_name: str, user_type) -> bool:
-    """Добавляет нового пользователя в базу
-    возвращает False если пользователь уже есть
-    и True в случае успеха"""
-
-    cursor.execute(f"SELECT id FROM users WHERE id={id}")
-    user_exists = cursor.fetchall()
-    if user_exists:
-        return False
-    cursor.execute(
-        "INSERT INTO users (id, fname, lname, user_type) VALUES (?, ?, ?, ?)",
-        (id, first_name, last_name, user_type),
-    )
-    conn.commit()
-    return True
-
 
 def get_user_type(id: int) -> str:
     cursor.execute(f"SELECT user_type FROM users WHERE id={id}")
@@ -57,7 +41,7 @@ def get_user_type(id: int) -> str:
 
 def get_users_id_list() -> List[Tuple]:
     """Возвращает список из id зарегистрированных пользователей"""
-    cursor.execute("SELECT id, fname, lname, user_type FROM users")
+    cursor.execute("SELECT id, name, user_type FROM users")
     users = cursor.fetchall()
     return users
 
@@ -94,10 +78,11 @@ def set_actual_object(id_object: int, id_user: int):
 
 def get_actual_object(id_user: int) -> str:
     cursor.execute(f"SELECT object FROM actual_object WHERE user={id_user}")
-    object_id = cursor.fetchall()[0][0]
-    print(object_id)
-    cursor.execute(f"SELECT name FROM objects WHERE id={object_id}")
-    return cursor.fetchall()[0][0]
+    object_id = cursor.fetchone()
+    if not object_id:
+        return None
+    cursor.execute(f"SELECT name FROM objects WHERE id={object_id[0]}")
+    return cursor.fetchone()[0]
 
 
 def get_actual_object_id(user_id: int) -> int:
@@ -136,7 +121,42 @@ def set_work_date(user_id: int, date: datetime, work_duration: Decimal):
         )
     conn.commit()
 
+def get_user_result(user_id: int):
+    cursor.execute("SELECT object, SUM(hours) AS hours_sum FROM summary "
+                   f"WHERE id={user_id} "
+                    "GROUP BY object "
+                    "ORDER BY hours_sum DESC")
+    result = cursor.fetchall()
+    return result
 
+def get_user_detail_result(user_id: int):
+    object = get_actual_object(user_id)
+    cursor.execute("SELECT day, hours FROM summary "
+                   f"WHERE id={user_id} AND object='{object}' "
+                    "ORDER BY day DESC")
+    result = cursor.fetchall()
+    cursor.execute("SELECT SUM(hours) AS hours_sum FROM summary " 
+                    f"WHERE object='{object}' AND id={user_id}")
+    result.append(("Итог", cursor.fetchone()[0]))
+    return result
+
+def get_objects_result():
+    lst = get_objects_list()
+    objects = [item[0] for item in lst]
+    result = {}
+    for item in objects:
+        cursor.execute("SELECT name, SUM(hours) AS hours_sum FROM summary " 
+                        f"WHERE object='{item}' "
+                        "GROUP BY name "
+                        "ORDER BY hours_sum DESC")
+        rec = cursor.fetchall()
+
+        cursor.execute("SELECT SUM(hours) AS hours_sum FROM summary " 
+                        f"WHERE object='{item}'")
+        rec.append(("Итог", cursor.fetchone()[0]))
+        result[item] = rec
+    return result
+        
 def _init_db():
     with open("sqlite/createdb.sql", "r") as f:
         sql = f.read()
